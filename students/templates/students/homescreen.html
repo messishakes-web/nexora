@@ -1,0 +1,351 @@
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexora | Student Portal</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #101827;
+            color: #ffffff;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .topbar {
+            height: 85px;
+            padding: 0 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #29364a;
+        }
+
+        .brand {
+            font-size: 27px;
+            font-weight: bold;
+            letter-spacing: 3px;
+        }
+
+        .portal-name {
+            color: #8fa5c1;
+            font-size: 11px;
+            margin-top: 5px;
+            letter-spacing: 2px;
+        }
+
+        .system-time {
+            color: #dce8f8;
+            font-size: 18px;
+        }
+
+        .viewport {
+            width: 100%;
+            height: calc(100vh - 85px);
+            overflow: hidden;
+            touch-action: pan-y;
+        }
+
+        .screens {
+            display: flex;
+            width: 200%;
+            height: 100%;
+            transition: transform 0.4s ease;
+        }
+
+        .screen {
+            width: 50%;
+            height: 100%;
+            padding: 55px 8%;
+            flex-shrink: 0;
+            overflow-y: auto;
+        }
+
+        .welcome {
+            margin-bottom: 40px;
+        }
+
+        .welcome h1 {
+            font-size: 34px;
+            margin-bottom: 12px;
+        }
+
+        .welcome p {
+            color: #9eafc5;
+            font-size: 16px;
+        }
+
+        .main-apps {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 22px;
+            max-width: 850px;
+        }
+
+        .app {
+            background: #1d2b40;
+            border: 1px solid #2b405d;
+            border-radius: 18px;
+            min-height: 165px;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 12px;
+            text-decoration: none;
+            color: white;
+            transition: 0.2s;
+        }
+
+        .app:hover {
+            background: #263b59;
+            transform: translateY(-3px);
+        }
+
+        .app-icon {
+            font-size: 34px;
+            color: #60a5fa;
+        }
+
+        .app h2 {
+            font-size: 19px;
+        }
+
+        .app p {
+            color: #aabbd0;
+            font-size: 13px;
+        }
+
+        .announcements {
+            margin-top: 25px;
+            max-width: 850px;
+            padding: 25px;
+            background: #1d2b40;
+            border: 1px solid #2b405d;
+            border-radius: 18px;
+        }
+
+        .announcements h2 {
+            font-size: 19px;
+            margin-bottom: 10px;
+        }
+
+        .announcements p {
+            color: #aabbd0;
+            font-size: 14px;
+        }
+
+        .secondary-apps {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 20px;
+            max-width: 650px;
+            margin-top: 35px;
+        }
+
+        .secondary-apps .app {
+            min-height: 140px;
+        }
+
+        .navigation {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            margin-top: 35px;
+            color: #9eafc5;
+            font-size: 13px;
+        }
+
+        .dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: #52647d;
+        }
+
+        .dot.active {
+            background: #60a5fa;
+        }
+
+        @media (max-width: 600px) {
+            .screen {
+                padding: 35px 6%;
+            }
+
+            .welcome h1 {
+                font-size: 27px;
+            }
+
+            .app {
+                min-height: 140px;
+                padding: 18px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header class="topbar">
+    <div>
+        <div class="brand">NEXORA</div>
+        <div class="portal-name">FSK PORTAL</div>
+    </div>
+
+    <div class="system-time" id="clock">00:00</div>
+</header>
+
+<div class="viewport" id="viewport">
+
+    <div class="screens" id="screens">
+
+        <!-- SCREEN 1: MAIN APPLICATIONS -->
+        <section class="screen">
+
+            <div class="welcome">
+                <h1>Welcome back, {{ student.first_name }}</h1>
+                <p>Your school connection starts here.</p>
+            </div>
+
+            <div class="main-apps">
+
+                <a href="{% url 'student-calling' %}" class="app">
+                    <div class="app-icon">☎</div>
+                    <h2>Calling</h2>
+                    <p>Contact your authorized parents.</p>
+                </a>
+
+                <a href="#" class="app">
+                    <div class="app-icon">✉</div>
+                    <h2>Messages</h2>
+                    <p>Your school communications.</p>
+                </a>
+
+            </div>
+
+            <div class="announcements">
+                <h2>📢 School Announcements</h2>
+                <p>Important school updates and notices will appear here.</p>
+            </div>
+
+            <div class="navigation">
+                <span class="dot active"></span>
+                <span class="dot"></span>
+                <span>Swipe left for more applications →</span>
+            </div>
+
+        </section>
+
+
+        <!-- SCREEN 2: OTHER APPLICATIONS -->
+        <section class="screen">
+
+            <div class="welcome">
+                <h1>School Applications</h1>
+                <p>Explore your other student services.</p>
+            </div>
+
+            <div class="secondary-apps">
+
+                <a href="#" class="app">
+                    <div class="app-icon">▦</div>
+                    <h2>Timetable</h2>
+                    <p>View your school schedule.</p>
+                </a>
+
+                <a href="#" class="app">
+                    <div class="app-icon">▤</div>
+                    <h2>Learning</h2>
+                    <p>Access learning materials.</p>
+                </a>
+
+                <a href="#" class="app">
+                    <div class="app-icon">◉</div>
+                    <h2>My Profile</h2>
+                    <p>View your student information.</p>
+                </a>
+
+                <a href="#" class="app">
+                    <div class="app-icon">⚙</div>
+                    <h2>Settings</h2>
+                    <p>Manage your preferences.</p>
+                </a>
+
+            </div>
+
+            <div class="navigation">
+                <span class="dot"></span>
+                <span class="dot active"></span>
+                <span>← Swipe right to return</span>
+            </div>
+
+        </section>
+
+    </div>
+</div>
+
+<script>
+    // Live clock
+    function updateClock() {
+        const now = new Date();
+
+        document.getElementById("clock").textContent =
+            now.toLocaleTimeString("en-GB", {
+                hour: "2-digit",
+                minute: "2-digit"
+            });
+    }
+
+    updateClock();
+    setInterval(updateClock, 1000);
+
+
+    // Horizontal touchscreen navigation
+    const screens = document.getElementById("screens");
+    const viewport = document.getElementById("viewport");
+
+    let currentScreen = 0;
+    let startX = 0;
+
+    function changeScreen(screen) {
+        currentScreen = screen;
+
+        screens.style.transform =
+            `translateX(-${screen * 50}%)`;
+
+        document.querySelectorAll(".dot").forEach((dot, index) => {
+            dot.classList.toggle("active", index === screen);
+        });
+    }
+
+    viewport.addEventListener("touchstart", function(event) {
+        startX = event.touches[0].clientX;
+    });
+
+    viewport.addEventListener("touchend", function(event) {
+        const endX = event.changedTouches[0].clientX;
+        const difference = startX - endX;
+
+        if (difference > 60 && currentScreen === 0) {
+            changeScreen(1);
+        }
+
+        if (difference < -60 && currentScreen === 1) {
+            changeScreen(0);
+        }
+    });
+</script>
+
+</body>
+</html>

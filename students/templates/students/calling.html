@@ -1,0 +1,448 @@
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexora | Calling</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: #101827;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 25px;
+        }
+
+        .calling-container {
+            width: 100%;
+            max-width: 1100px;
+            min-height: 650px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 35px;
+            background: #172235;
+            padding: 35px;
+            border-radius: 18px;
+        }
+
+        .section-title {
+            font-size: 23px;
+            margin-bottom: 25px;
+        }
+
+        /* LEFT: DIAL PAD */
+
+        .dial-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .number-display {
+            width: 100%;
+            min-height: 65px;
+            background: #0d1726;
+            border: 1px solid #29384d;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 25px;
+            letter-spacing: 3px;
+            margin-bottom: 25px;
+            color: #ffffff;
+            overflow-wrap: anywhere;
+        }
+
+        .dial-pad {
+            width: 100%;
+            max-width: 340px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 13px;
+        }
+
+        .dial-key {
+            height: 68px;
+            border: none;
+            border-radius: 12px;
+            background: #26364c;
+            color: white;
+            font-size: 25px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .dial-key:hover {
+            background: #354b67;
+        }
+
+        .dial-key:active {
+            transform: scale(0.96);
+        }
+
+        .dial-actions {
+            width: 100%;
+            max-width: 340px;
+            display: flex;
+            gap: 12px;
+            margin-top: 18px;
+        }
+
+        .clear-button {
+            width: 65px;
+            border: none;
+            border-radius: 12px;
+            background: #354258;
+            color: white;
+            font-size: 17px;
+            cursor: pointer;
+        }
+
+        .call-button {
+            flex: 1;
+            height: 58px;
+            border: none;
+            border-radius: 12px;
+            background: #16a765;
+            color: white;
+            font-size: 19px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .call-button:hover {
+            background: #128c54;
+        }
+
+        /* RIGHT: ASSIGNED CONTACTS */
+
+        .contacts-section {
+            border-left: 1px solid #2b3b50;
+            padding-left: 30px;
+        }
+
+        .contacts-subtitle {
+            color: #9eacbd;
+            font-size: 14px;
+            margin-top: -15px;
+            margin-bottom: 22px;
+        }
+
+        .contacts-list {
+            display: flex;
+            flex-direction: column;
+            gap: 13px;
+        }
+
+        .contact-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            background: #202f44;
+            border: 1px solid transparent;
+            padding: 17px;
+            border-radius: 12px;
+        }
+
+        .contact-card.selected {
+            border-color: #16a765;
+        }
+
+        .contact-info {
+            min-width: 0;
+        }
+
+        .contact-name {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .contact-relationship {
+            color: #a6b3c3;
+            font-size: 13px;
+        }
+
+        .contact-number {
+            color: #c4cfdb;
+            font-size: 13px;
+            margin-top: 5px;
+        }
+
+        .select-button {
+            border: none;
+            border-radius: 8px;
+            padding: 10px 13px;
+            background: #344760;
+            color: white;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .select-button:hover {
+            background: #16a765;
+        }
+
+        .message {
+            color: #aab8c9;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 750px) {
+            body {
+                padding: 10px;
+                align-items: flex-start;
+            }
+
+            .calling-container {
+                grid-template-columns: 1fr;
+                padding: 22px;
+            }
+
+            .contacts-section {
+                border-left: none;
+                border-top: 1px solid #2b3b50;
+                padding-left: 0;
+                padding-top: 28px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <form id="csrfForm" hidden>
+    {% csrf_token %}
+    </form>
+
+    <main class="calling-container">
+
+        <!-- LEFT SIDE: DIAL PAD -->
+        <section class="dial-section">
+
+            <h2 class="section-title">Make a Call</h2>
+
+            <div class="number-display" id="numberDisplay">
+                Enter number
+            </div>
+
+            <div class="dial-pad">
+                <button class="dial-key" data-number="1">1</button>
+                <button class="dial-key" data-number="2">2</button>
+                <button class="dial-key" data-number="3">3</button>
+
+                <button class="dial-key" data-number="4">4</button>
+                <button class="dial-key" data-number="5">5</button>
+                <button class="dial-key" data-number="6">6</button>
+
+                <button class="dial-key" data-number="7">7</button>
+                <button class="dial-key" data-number="8">8</button>
+                <button class="dial-key" data-number="9">9</button>
+
+                <button class="dial-key" data-number="*">*</button>
+                <button class="dial-key" data-number="0">0</button>
+                <button class="dial-key" data-number="#">#</button>
+            </div>
+
+            <div class="dial-actions">
+                <button class="clear-button" id="clearButton">
+                    ⌫
+                </button>
+
+                <button class="call-button" id="callButton">
+                    ☎ &nbsp; Call
+                </button>
+            </div>
+
+            <p class="message" id="callMessage">
+                Select an assigned contact or enter a number.
+            </p>
+
+        </section>
+
+
+        <!-- RIGHT SIDE: ASSIGNED CONTACTS -->
+        <section class="contacts-section">
+
+            <h2 class="section-title">Assigned Contacts</h2>
+
+            <p class="contacts-subtitle">
+                Your authorized parent and guardian contacts
+            </p>
+
+            <div class="contacts-list" id="contactsList">
+                Loading contacts...
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <script>
+        const numberDisplay = document.getElementById("numberDisplay");
+        const contactsList = document.getElementById("contactsList");
+        const callMessage = document.getElementById("callMessage");
+
+        let enteredNumber = "";
+        let selectedContactId = null;
+
+        function updateDisplay() {
+            numberDisplay.textContent = enteredNumber || "Enter number";
+        }
+
+        document.querySelectorAll(".dial-key").forEach(button => {
+            button.addEventListener("click", () => {
+                enteredNumber += button.dataset.number;
+                updateDisplay();
+            });
+        });
+
+        document.getElementById("clearButton").addEventListener("click", () => {
+            enteredNumber = enteredNumber.slice(0, -1);
+            updateDisplay();
+        });
+
+        function selectContact(contactId, phoneNumber, selectedCard) {
+            selectedContactId = contactId;
+            enteredNumber = phoneNumber;
+            updateDisplay();
+
+            document.querySelectorAll(".contact-card").forEach(card => {
+                card.classList.remove("selected");
+            });
+
+            selectedCard.classList.add("selected");
+            callMessage.textContent =
+            "Contact selected. Ready for verification.";
+        }
+
+        async function loadContacts() {
+            try {
+                const response = await fetch("/api/my-contacts/", {
+                    credentials: "same-origin"
+                });
+
+                if (!response.ok) {
+                    throw new Error("Unable to load contacts.");
+                }
+
+                const contacts = await response.json();
+                contactsList.replaceChildren();
+
+                if (contacts.length === 0) {
+                    contactsList.textContent = "No authorized contacts available.";
+                    return;
+                }
+
+                contacts.forEach(contact => {
+                    const card = document.createElement("div");
+                    card.className = "contact-card";
+
+                    const info = document.createElement("div");
+                    info.className = "contact-info";
+
+                    const name = document.createElement("div");
+                    name.className = "contact-name";
+                    name.textContent = contact.full_name;
+
+                    const relationship = document.createElement("div");
+                    relationship.className = "contact-relationship";
+                    relationship.textContent = contact.relationship;
+
+                    const phone = document.createElement("div");
+                    phone.className = "contact-number";
+                    phone.textContent = contact.phone_number;
+
+                    const selectButton = document.createElement("button");
+                    selectButton.className = "select-button";
+                    selectButton.textContent = "Select";
+
+                    selectButton.addEventListener("click", () => {
+                        selectContact(contact.id, contact.phone_number, card);
+                    });
+
+                    info.append(name, relationship, phone);
+                    card.append(info, selectButton);
+                    contactsList.appendChild(card);
+                });
+
+            } catch (error) {
+                contactsList.textContent = "Could not load contacts. Please log in again.";
+            }
+        }
+
+        document.getElementById("callButton").addEventListener("click", async () => {
+    if (!selectedContactId) {
+        callMessage.textContent =
+            "Please select an authorized contact first.";
+        return;
+    }
+
+    const csrfToken = document.querySelector(
+        "#csrfForm [name=csrfmiddlewaretoken]"
+    ).value;
+
+    const callButton = document.getElementById("callButton");
+
+    callButton.disabled = true;
+    callButton.textContent = "Verifying...";
+
+    try {
+        const response = await fetch("/api/check-call-readiness/", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": csrfToken
+            },
+            body: JSON.stringify({
+                contact_id: selectedContactId
+            })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            callMessage.textContent =
+                result.error || "Call verification failed.";
+            return;
+        }
+
+        if (result.ready) {
+            callMessage.textContent =
+                "Verification successful. Available credit: " +
+                result.available_balance +
+                ". GSM hardware is not connected yet.";
+        }
+
+    } catch (error) {
+        callMessage.textContent =
+            "Unable to contact Nexora server. Try again.";
+    } finally {
+        callButton.disabled = false;
+        callButton.textContent = "☎ Call";
+    }
+});
+
+        loadContacts();
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,41 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+<div id="content-main">
+    <h1>{{ title }}</h1>
+
+    <p>
+        Student:
+        <strong>{{ student.first_name }} {{ student.last_name }}</strong>
+    </p>
+
+    <p>
+        Admission number:
+        <strong>{{ student.admission_number }}</strong>
+    </p>
+
+    <p>
+        A new random six-digit PIN will be generated after confirmation.
+        The existing PIN will no longer work.
+    </p>
+
+    <form method="post">
+        {% csrf_token %}
+
+        {{ form.non_field_errors }}
+        {{ form.as_p }}
+
+        <div class="submit-row">
+            <input
+                type="submit"
+                value="Generate / Reset PIN"
+                class="default"
+            >
+
+            <a href="{% url 'admin:students_student_change' student.pk %}">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

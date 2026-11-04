@@ -1,0 +1,25 @@
+
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+  <h1>Add Calling Credit</h1>
+
+  <p>
+    Account: {{ account.student.admission_number }}
+    — {{ account.student.first_name }}
+    {{ account.student.last_name }}
+  </p>
+
+  <p>Current balance: KSh {{ account.balance }}</p>
+
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+
+    <button type="submit">Add Credit</button>
+  </form>
+
+  <p>
+    <a href="{{ account_list_url }}">Back to Calling Accounts</a>
+  </p>
+{% endblock %}
