@@ -510,3 +510,29 @@ def mpesa_stk_callback(request):
     return JsonResponse(
         {"ResultCode": 0, "ResultDesc": "Callback received"}
     )
+
+from django.contrib.auth import authenticate, login
+from django.contrib import messages
+from django.shortcuts import render, redirect
+
+def student_login(request):
+    if request.method == "POST":
+        admission_number = request.POST.get("admission_number", "").strip()
+        pin = request.POST.get("pin", "").strip()
+
+        user = authenticate(
+            request,
+            username=admission_number,
+            password=pin,
+        )
+
+        if user is not None and hasattr(user, "student_profile"):
+            student = user.student_profile
+
+            if student.is_active:
+                login(request, user)
+                return redirect("student-homescreen")
+
+        messages.error(request, "Invalid admission number or PIN.")
+
+    return render(request, "students/login.html")
