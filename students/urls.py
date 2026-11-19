@@ -1,62 +1,60 @@
 from django.urls import path
 
-# We do NOT import views directly here. 
-# We use string references to prevent circular imports.
+# We import the views module here. 
+# If views.py imports something from urls.py, we will use string references 
+# for reverse() inside views.py, not import them.
+from . import views
 
 urlpatterns = [
-    path(
-        "", 
-        "students.views.student_login", 
-        name="home"
-    ),
+    path("", views.student_login, name="home"),
     path(
         "api/students/<str:admission_number>/contacts/",
-        "students.views.student_parent_contacts",
+        views.student_parent_contacts,
         name="student-parent-contacts",
     ),
     path(
         "api/my-contacts/",
-        "students.views.my_parent_contacts",
+        views.my_parent_contacts,
         name="my-parent-contacts",
     ),
     path(
         "api/check-call-readiness/",
-        "students.views.check_call_readiness",
+        views.check_call_readiness,
         name="check-call-readiness",
     ),
     path(
         "booth/",
-        "students.views.booth_lockscreen",
+        views.booth_lockscreen,
         name="booth-lockscreen",
     ),
     path(
         "student-login/",
-        "students.views.student_login",
+        views.student_login,
         name="student-login",
     ),
     path(
         "student-homescreen/",
-        "students.views.student_homescreen",
+        views.student_homescreen,
         name="student-homescreen",
     ),
     path(
         "calling/",
-        "students.views.student_calling",
+        views.student_calling,
         name="student-calling",
     ),
     path(
         "mpesa/pay/",
-        "students.views.initiate_calling_credit_payment",
+        views.initiate_calling_credit_payment,
         name="mpesa-payment",
     ),
     path(
         "mpesa/payments/<uuid:payment_reference>/status/",
-        "students.views.check_mpesa_payment_status",
+        views.check_mpesa_payment_status,
         name="mpesa-payment-status",
     ),
     path(
         "mpesa/callback/",
-        "students.views.mpesa_stk_callback",
+        views.mpesa_stk_callback,
         name="mpesa_stk_callback",
     ),
 ]
