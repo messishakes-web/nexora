@@ -17,8 +17,12 @@ from .models import (
     CallingAccount,
     CreditTransaction,
     CallRecord,
+    MpesaPayment,
 )
-from .services import add_calling_credit
+from .services import (
+    add_calling_credit,
+    apply_verified_mpesa_payment,
+)
 
 
 # =========================================================
@@ -282,6 +286,30 @@ class CallingCreditForm(forms.Form):
 # CALLING ACCOUNT ADMIN
 # =========================================================
 
+class MpesaReconciliationForm(forms.Form):
+    receipt = forms.CharField(
+        label="Verified M-Pesa receipt",
+        max_length=50,
+        required=True,
+    )
+
+    verified_amount = forms.DecimalField(
+        label="Amount confirmed against Safaricom records (KSh)",
+        max_digits=10,
+        decimal_places=2,
+        min_value=Decimal("0.01"),
+        required=True,
+    )
+
+    confirm_verified = forms.BooleanField(
+        label=(
+            "I independently checked a trusted Safaricom "
+            "transaction record and confirmed the receipt "
+            "and amount match this payment."
+        ),
+        required=True,
+    )
+
 @admin.register(CallingAccount)
 class CallingAccountAdmin(admin.ModelAdmin):
     list_display = (
@@ -373,6 +401,130 @@ class CallingAccountAdmin(admin.ModelAdmin):
             context,
         )
 
+# =========================================================
+# M-PESA PAYMENT RECONCILIATION ADMIN
+# =========================================================
+
+@admin.register(MpesaPayment)
+class MpesaPaymentAdmin(admin.ModelAdmin):
+    list_display = (
+        "payment_reference",
+        "account_student",
+        "amount",
+        "status",
+        "provider_receipt",
+        "created_at",
+        "reconcile_action",
+    )
+
+    search_fields = (
+        "payment_reference",
+        "provider_receipt",
+        "phone_number",
+        "calling_account__student__admission_number",
+    )
+
+    list_filter = ("status", "created_at")
+
+    readonly_fields = (
+        "payment_reference",
+        "calling_account",
+        "amount",
+        "phone_number",
+        "status",
+        "merchant_request_id",
+        "checkout_request_id",
+        "provider_receipt",
+        "result_description",
+        "created_at",
+        "updated_at",
+    )
+
+    def get_urls(self):
+        custom_urls = [
+            path(
+                "<path:object_id>/reconcile/",
+                self.admin_site.admin_view(self.reconcile_view),
+                name="students_mpesapayment_reconcile",
+            ),
+        ]
+        return custom_urls + super().get_urls()
+
+    @admin.display(description="Student")
+    def account_student(self, obj):
+        return obj.calling_account.student
+
+    @admin.display(description="Reconciliation")
+    def reconcile_action(self, obj):
+        url = reverse(
+            "admin:students_mpesapayment_reconcile",
+            args=[obj.pk],
+        )
+        return format_html(
+            '<a href="{}">Review / reconcile</a>',
+            url,
+        )
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def reconcile_view(self, request, object_id):
+        payment = get_object_or_404(
+            self.get_queryset(request),
+            pk=object_id,
+        )
+
+        if not self.has_change_permission(request, payment):
+            raise PermissionDenied
+
+        form = MpesaReconciliationForm(
+            request.POST or None,
+            initial={
+                "receipt": payment.provider_receipt or "",
+                "verified_amount": payment.amount,
+            },
+        )
+
+        if request.method == "POST" and form.is_valid():
+            try:
+                apply_verified_mpesa_payment(
+                    payment_id=payment.pk,
+                    receipt=form.cleaned_data["receipt"],
+                    verified_amount=form.cleaned_data[
+                        "verified_amount"
+                    ],
+                    administrator=request.user,
+                )
+            except ValidationError as error:
+                form.add_error(None, error)
+            else:
+                messages.success(
+                    request,
+                    "M-Pesa payment reconciled successfully.",
+                )
+                return redirect(
+                    "admin:students_mpesapayment_changelist"
+                )
+
+        context = {
+            **self.admin_site.each_context(request),
+            "title": "Reconcile M-Pesa Payment",
+            "opts": self.model._meta,
+            "payment": payment,
+            "form": form,
+            "payment_list_url": reverse(
+                "admin:students_mpesapayment_changelist"
+            ),
+        }
+
+        return TemplateResponse(
+            request,
+            "admin/mpesa_reconcile.html",
+            context,
+        )
 
 # =========================================================
 # CREDIT TRANSACTION ADMIN

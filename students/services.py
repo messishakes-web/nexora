@@ -291,6 +291,7 @@ def apply_verified_mpesa_payment(
     payment_id,
     receipt,
     verified_amount,
+    administrator,
 ):
     """
     Apply calling credit for an independently verified M-Pesa payment.
@@ -298,6 +299,15 @@ def apply_verified_mpesa_payment(
     Call only after server-side provider verification succeeds.
     A repeated call for an already successful payment is harmless.
     """
+
+    if (
+        administrator is None
+        or not administrator.is_authenticated
+        or not administrator.is_staff
+    ):
+        raise ValidationError(
+            "An authenticated staff administrator is required."
+        )
 
     receipt = (receipt or "").strip()
 
@@ -395,7 +405,7 @@ def apply_verified_mpesa_payment(
             balance_after=account.balance,
             description="Verified M-Pesa calling credit",
             reference=receipt,
-            recorded_by=None,
+            recorded_by=administrator,
         )
 
         payment.status = MpesaPayment.Status.SUCCESS
