@@ -13,5 +13,6 @@ def home(request):
 urlpatterns = [
     path('', home),
     path('admin/', admin.site.urls),
+    path('students/', include('students.urls')),
     # ... your existing routes
 ]
