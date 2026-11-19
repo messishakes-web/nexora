@@ -4,4 +4,4 @@ gunicorn==23.0.0
 whitenoise==6.11.0
 psycopg2-binary==2.9.13
 dj-database-url==3.1.2
-djangorestframework==3.16.1
+djangorestframework>=3.18.0git add requirements.txt
