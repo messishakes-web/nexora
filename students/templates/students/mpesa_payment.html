@@ -1,0 +1,245 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Nexora | Add Calling Credit</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 480px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f4f6fa;
+            color: #17233c;
+        }
+
+        .panel {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 18px #00000012;
+        }
+
+        label {
+            display: block;
+            margin-top: 18px;
+            font-weight: bold;
+        }
+
+        input {
+            box-sizing: border-box;
+            width: 100%;
+            padding: 12px;
+            margin-top: 7px;
+            border: 1px solid #ccd3df;
+            border-radius: 6px;
+        }
+
+        button {
+            width: 100%;
+            margin-top: 16px;
+            padding: 13px;
+            border: 0;
+            border-radius: 6px;
+            background: #172b50;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: wait;
+        }
+
+        .message, .payment-details, .status-result {
+            padding: 12px;
+            background: #edf2f9;
+            border-radius: 6px;
+            margin: 12px 0;
+            overflow-wrap: anywhere;
+        }
+
+        .status-result:empty {
+            display: none;
+        }
+
+        .help-text {
+            color: #4b5870;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="panel">
+        <h1>Nexora</h1>
+        <h2>Add Calling Credit</h2>
+
+        <p>Request an M-Pesa payment to top up your calling account.</p>
+
+        {% for message in messages %}
+            <div class="message">{{ message }}</div>
+        {% endfor %}
+
+        {% if payment %}
+            <div class="payment-details">
+                <p>
+                    <strong>Payment reference:</strong><br>
+                    {{ payment.payment_reference }}
+                </p>
+
+                <p>
+                    <strong>Amount:</strong>
+                    KSh {{ payment.amount }}
+                </p>
+
+                <p>
+                    <strong>Saved status:</strong>
+                    <span id="saved-status">
+                        {{ payment.get_status_display }}
+                    </span>
+                </p>
+
+                <p>{{ payment.result_description }}</p>
+
+                {% if payment.status == "PENDING" %}
+                    <p class="help-text">
+                        Your payment is awaiting confirmation.
+                        Checking status does not add credit.
+                        Avoid submitting another payment request
+                        until you have checked this payment.
+                    </p>
+
+                    <button
+                        type="button"
+                        id="check-status-button"
+                        data-status-url="{% url 'mpesa-payment-status' payment.payment_reference %}"
+                    >
+                        Check Payment Status
+                    </button>
+
+                    <div
+                        id="status-result"
+                        class="status-result"
+                        role="status"
+                        aria-live="polite"
+                    ></div>
+                {% endif %}
+            </div>
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+
+            <label for="phone_number">M-Pesa phone number</label>
+            <input
+                id="phone_number"
+                name="phone_number"
+                type="tel"
+                placeholder="07XXXXXXXX"
+                autocomplete="tel"
+                required
+            >
+
+            <label for="amount">Amount (KSh)</label>
+            <input
+                id="amount"
+                name="amount"
+                type="number"
+                min="1"
+                max="150000"
+                step="1"
+                placeholder="100"
+                required
+            >
+
+            <button type="submit">Request STK Push</button>
+        </form>
+    </div>
+
+    <script>
+        const statusButton = document.getElementById(
+            "check-status-button"
+        );
+
+        if (statusButton) {
+            statusButton.addEventListener("click", async function () {
+                const resultBox = document.getElementById(
+                    "status-result"
+                );
+
+                statusButton.disabled = true;
+                statusButton.textContent = "Checking...";
+                resultBox.textContent = "Contacting the payment service...";
+
+                try {
+                    const response = await fetch(
+                        statusButton.dataset.statusUrl,
+                        {
+                            method: "GET",
+                            credentials: "same-origin",
+                            headers: {
+                                "Accept": "application/json"
+                            }
+                        }
+                    );
+
+                    const data = await response.json();
+
+                    const parts = [];
+
+                    if (data.payment_status) {
+                        parts.push(
+                            "Saved payment status: " +
+                            data.payment_status
+                        );
+                    }
+
+                    if (data.message) {
+                        parts.push(data.message);
+                    }
+
+                    if (data.provider_description) {
+                        parts.push(
+                            "Provider response: " +
+                            data.provider_description
+                        );
+                    }
+
+                    parts.push(
+                        data.credit_applied === true
+                            ? "The server reports that credit was applied."
+                            : "This check has not applied any calling credit."
+                    );
+
+                    resultBox.textContent = parts.join(" ");
+
+                    if (data.payment_status) {
+                        const savedStatus = document.getElementById(
+                            "saved-status"
+                        );
+
+                        if (savedStatus) {
+                            savedStatus.textContent =
+                                data.payment_status;
+                        }
+                    }
+                } catch (error) {
+                    resultBox.textContent =
+                        "Could not retrieve the payment status. " +
+                        "Check your connection and try again later.";
+                } finally {
+                    statusButton.disabled = false;
+                    statusButton.textContent = "Check Payment Status";
+                }
+            });
+        }
+    </script>
+</body>
+</html>
