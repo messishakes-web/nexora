@@ -1,4 +1,3 @@
-
 import json
 import logging
 import re
@@ -32,9 +31,6 @@ logger = logging.getLogger(__name__)
 def initiate_calling_credit_payment(request):
     """
     Start an M-Pesa STK Push for a student's calling account.
-
-    An accepted STK Push request does not prove that payment
-    succeeded. Credit is added only after independent verification.
     """
     if not hasattr(request.user, "student_profile"):
         return redirect("student-login")
@@ -150,7 +146,6 @@ def initiate_calling_credit_payment(request):
     if response_code and response_code != "0":
         payment.status = MpesaPayment.Status.FAILED
     elif response_code == "0" and payment.checkout_request_id:
-        # Accepted request only; payment remains pending.
         payment.status = MpesaPayment.Status.PENDING
 
     payment.save(
@@ -210,7 +205,6 @@ def student_parent_contacts(request, admission_number):
         )
 
     contacts = student.parent_contacts.filter(is_authorized=True)
-
     serializer = ParentContactSerializer(contacts, many=True)
     return Response(serializer.data)
 
@@ -235,7 +229,6 @@ def my_parent_contacts(request):
 
     contacts = student.parent_contacts.filter(is_authorized=True)
     serializer = ParentContactSerializer(contacts, many=True)
-
     return Response(serializer.data)
 
 
@@ -317,10 +310,14 @@ def student_homescreen(request):
     if not student.is_active:
         return redirect("student-login")
 
+    # Fetch the calling account balance
+    account = CallingAccount.objects.filter(student=student, is_active=True).first()
+    balance = account.balance if account else "0.00"
+
     return render(
         request,
         "students/homescreen.html",
-        {"student": student},
+        {"student": student, "balance": balance},
     )
 
 
@@ -346,17 +343,8 @@ def student_calling(request):
 @login_required
 @require_GET
 def check_mpesa_payment_status(request, payment_reference):
-    """
-    Query Daraja for a payment belonging to the logged-in student.
-
-    This endpoint reports the provider's response but does not change
-    payment status or add calling credit.
-    """
     if not hasattr(request.user, "student_profile"):
-        return JsonResponse(
-            {"error": "Student account required."},
-            status=403,
-        )
+        return JsonResponse({"error": "Student account required."}, status=403)
 
     student = request.user.student_profile
 
@@ -366,10 +354,7 @@ def check_mpesa_payment_status(request, payment_reference):
     ).first()
 
     if payment is None:
-        return JsonResponse(
-            {"error": "Payment not found."},
-            status=404,
-        )
+        return JsonResponse({"error": "Payment not found."}, status=404)
 
     if payment.status != MpesaPayment.Status.PENDING:
         return JsonResponse({
@@ -383,22 +368,14 @@ def check_mpesa_payment_status(request, payment_reference):
         return JsonResponse({
             "payment_reference": str(payment.payment_reference),
             "payment_status": payment.status,
-            "message": (
-                "No checkout request ID is available yet. "
-                "Check the payment again later."
-            ),
+            "message": "No checkout request ID is available yet. Check the payment again later.",
             "credit_applied": False,
         }, status=409)
 
     try:
-        result = query_stk_push_status(
-            payment.checkout_request_id
-        )
+        result = query_stk_push_status(payment.checkout_request_id)
     except (RuntimeError, ValueError):
-        logger.warning(
-            "Could not query Daraja for payment %s.",
-            payment.payment_reference,
-        )
+        logger.warning("Could not query Daraja for payment %s.", payment.payment_reference)
         return JsonResponse({
             "payment_reference": str(payment.payment_reference),
             "payment_status": payment.status,
@@ -414,7 +391,6 @@ def check_mpesa_payment_status(request, payment_reference):
             "credit_applied": False,
         }, status=502)
 
-    # Do not confuse acceptance of a query request with a completed payment.
     provider_result_code = result.get("ResultCode")
     provider_description = result.get("ResultDesc")
 
@@ -422,28 +398,17 @@ def check_mpesa_payment_status(request, payment_reference):
         provider_result_code = result.get("ResponseCode")
 
     if provider_result_code is None:
-        message = (
-            "Daraja returned a response, but the payment outcome "
-            "is not yet confirmed."
-        )
+        message = "Daraja returned a response, but the payment outcome is not yet confirmed."
     elif str(provider_result_code) == "0":
-        message = (
-            "Daraja returned a successful result code. "
-            "Payment details must still be verified before crediting."
-        )
+        message = "Daraja returned a successful result code. Payment details must still be verified before crediting."
     else:
-        message = (
-            "Daraja returned a non-success result. "
-            "The payment outcome requires interpretation."
-        )
+        message = "Daraja returned a non-success result. The payment outcome requires interpretation."
 
     return JsonResponse({
         "payment_reference": str(payment.payment_reference),
         "payment_status": payment.status,
-        "provider_result_code": str(provider_result_code)
-        if provider_result_code is not None else None,
-        "provider_description": str(provider_description)[:255]
-        if provider_description else "",
+        "provider_result_code": str(provider_result_code) if provider_result_code is not None else None,
+        "provider_description": str(provider_description)[:255] if provider_description else "",
         "message": message,
         "credit_applied": False,
     })
@@ -453,47 +418,27 @@ def check_mpesa_payment_status(request, payment_reference):
 @csrf_exempt
 @require_POST
 def mpesa_stk_callback(request):
-    """
-    Receive a Daraja STK callback.
-
-    This endpoint does not mark payments successful or credit balances.
-    """
     if len(request.body) > 64 * 1024:
-        return JsonResponse(
-            {"ResultCode": 1, "ResultDesc": "Payload too large"},
-            status=413,
-        )
+        return JsonResponse({"ResultCode": 1, "ResultDesc": "Payload too large"}, status=413)
 
     try:
         payload = json.loads(request.body)
     except (json.JSONDecodeError, UnicodeDecodeError):
-        return JsonResponse(
-            {"ResultCode": 1, "ResultDesc": "Invalid JSON"},
-            status=400,
-        )
+        return JsonResponse({"ResultCode": 1, "ResultDesc": "Invalid JSON"}, status=400)
 
     if not isinstance(payload, dict):
-        return JsonResponse(
-            {"ResultCode": 1, "ResultDesc": "Invalid payload"},
-            status=400,
-        )
+        return JsonResponse({"ResultCode": 1, "ResultDesc": "Invalid payload"}, status=400)
 
     body = payload.get("Body")
     callback = body.get("stkCallback") if isinstance(body, dict) else None
 
     if not isinstance(callback, dict):
-        return JsonResponse(
-            {"ResultCode": 1, "ResultDesc": "Invalid callback structure"},
-            status=400,
-        )
+        return JsonResponse({"ResultCode": 1, "ResultDesc": "Invalid callback structure"}, status=400)
 
     checkout_id = callback.get("CheckoutRequestID")
 
     if not isinstance(checkout_id, str) or not checkout_id.strip():
-        return JsonResponse(
-            {"ResultCode": 1, "ResultDesc": "Missing checkout ID"},
-            status=400,
-        )
+        return JsonResponse({"ResultCode": 1, "ResultDesc": "Missing checkout ID"}, status=400)
 
     payment_exists = MpesaPayment.objects.filter(
         checkout_request_id=checkout_id.strip()
@@ -501,38 +446,39 @@ def mpesa_stk_callback(request):
 
     if not payment_exists:
         logger.warning("Received callback for an unknown checkout ID.")
-        return JsonResponse(
-            {"ResultCode": 0, "ResultDesc": "Callback received"}
-        )
+        return JsonResponse({"ResultCode": 0, "ResultDesc": "Callback received"})
 
     logger.info("Received an unverified M-Pesa callback for a known checkout.")
 
-    return JsonResponse(
-        {"ResultCode": 0, "ResultDesc": "Callback received"}
-    )
+    return JsonResponse({"ResultCode": 0, "ResultDesc": "Callback received"})
 
-from django.contrib.auth import authenticate, login
-from django.contrib import messages
-from django.shortcuts import render, redirect
 
+# STUDENT LOGIN
 def student_login(request):
     if request.method == "POST":
         admission_number = request.POST.get("admission_number", "").strip()
         pin = request.POST.get("pin", "").strip()
 
+        # Authenticate using the linked User account
         user = authenticate(
             request,
             username=admission_number,
             password=pin,
         )
 
-        if user is not None and hasattr(user, "student_profile"):
-            student = user.student_profile
+        if user is not None:
+            # Check if this user has a student profile linked to them
+            if hasattr(user, "student_profile"):
+                student = user.student_profile
 
-            if student.is_active:
-                login(request, user)
-                return redirect("student-homescreen")
-
-        messages.error(request, "Invalid admission number or PIN.")
+                if student.is_active:
+                    login(request, user)
+                    return redirect("student-homescreen")
+                else:
+                    messages.error(request, "This student account is inactive.")
+            else:
+                messages.error(request, "This account is not linked to a student profile.")
+        else:
+            messages.error(request, "Invalid admission number or PIN.")
 
     return render(request, "students/login.html")

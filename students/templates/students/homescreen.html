@@ -7,8 +7,9 @@
     <header class="flex justify-between items-center mb-6 border-b border-gray-800 pb-4">
         <div>
             <p class="text-gray-400 text-sm font-semibold uppercase tracking-wider">Welcome back</p>
-            <!-- Replace 'Student Name' with the actual Django variable if you have one, e.g., {{ student.user.first_name }} -->
-            <h1 class="text-3xl font-bold text-white">Student Dashboard</h1>
+            <!-- Dynamic Student Name -->
+            <h1 class="text-3xl font-bold text-white">{{ student.first_name }} {{ student.last_name }}</h1>
+            <p class="text-sm text-gray-500 mt-1">Adm No: {{ student.admission_number }} | {{ student.class_name }}</p>
         </div>
         
         <!-- Logout Button -->
@@ -21,9 +22,8 @@
     <!-- Main App Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
         
-        <!-- App 1: Make a Call (Primary Action) -->
+        <!-- App 1: Make a Call -->
         <a href="/students/calling/" class="group bg-gradient-to-br from-blue-600 to-blue-800 p-8 rounded-3xl shadow-lg hover:scale-[1.02] transition-transform duration-300 flex flex-col justify-center cursor-pointer border border-blue-500/50 relative overflow-hidden">
-            <!-- Decorative background circle -->
             <div class="absolute -right-8 -top-8 w-32 h-32 bg-white/10 rounded-full blur-2xl group-hover:bg-white/20 transition"></div>
             
             <div class="bg-white/20 w-16 h-16 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-white/30 transition">
@@ -49,8 +49,8 @@
         <!-- Balance Card -->
         <div class="bg-gray-800/50 p-6 rounded-2xl border border-gray-700 flex flex-col items-center justify-center text-center">
             <p class="text-gray-400 text-sm font-semibold uppercase tracking-wider mb-2">Current Balance</p>
-            <!-- Replace 0 with your actual Django variable, e.g., KES {{ student.balance }} -->
-            <p class="text-4xl font-bold text-white">KES 0.00</p>
+            <!-- Dynamic Balance -->
+            <p class="text-4xl font-bold text-white">KES {{ balance }}</p>
         </div>
 
         <!-- Quick Info Card -->
