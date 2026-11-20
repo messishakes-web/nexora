@@ -1,351 +1,64 @@
+{% extends 'students/base.html' %}
 
-{% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nexora | Student Portal</title>
+{% block content %}
+<div class="flex-1 flex flex-col p-6 h-full w-full max-w-4xl mx-auto relative bg-gray-900">
+    
+    <!-- Top Header -->
+    <header class="flex justify-between items-center mb-6 border-b border-gray-800 pb-4">
+        <div>
+            <p class="text-gray-400 text-sm font-semibold uppercase tracking-wider">Welcome back</p>
+            <!-- Replace 'Student Name' with the actual Django variable if you have one, e.g., {{ student.user.first_name }} -->
+            <h1 class="text-3xl font-bold text-white">Student Dashboard</h1>
+        </div>
+        
+        <!-- Logout Button -->
+        <a href="/students/student-login/" class="bg-gray-800 hover:bg-red-900/50 text-gray-300 hover:text-red-400 px-5 py-3 rounded-xl border border-gray-700 transition flex items-center gap-2 font-semibold">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+            Log Out
+        </a>
+    </header>
 
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+    <!-- Main App Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
+        
+        <!-- App 1: Make a Call (Primary Action) -->
+        <a href="/students/calling/" class="group bg-gradient-to-br from-blue-600 to-blue-800 p-8 rounded-3xl shadow-lg hover:scale-[1.02] transition-transform duration-300 flex flex-col justify-center cursor-pointer border border-blue-500/50 relative overflow-hidden">
+            <!-- Decorative background circle -->
+            <div class="absolute -right-8 -top-8 w-32 h-32 bg-white/10 rounded-full blur-2xl group-hover:bg-white/20 transition"></div>
+            
+            <div class="bg-white/20 w-16 h-16 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-white/30 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+            </div>
+            <h3 class="text-2xl font-bold text-white mb-1 z-10">Make a Call</h3>
+            <p class="text-blue-200 z-10">Call your parents or guardian</p>
+        </a>
 
-        body {
-            font-family: Arial, sans-serif;
-            background: #101827;
-            color: #ffffff;
-            min-height: 100vh;
-            overflow: hidden;
-        }
+        <!-- App 2: Buy Credits -->
+        <a href="/students/mpesa/pay/" class="group bg-gray-800 p-8 rounded-3xl shadow-lg hover:scale-[1.02] transition-transform duration-300 flex flex-col justify-center cursor-pointer border border-gray-700 hover:border-green-500/50 relative overflow-hidden">
+            <div class="bg-green-500/20 w-16 h-16 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-green-500/30 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            </div>
+            <h3 class="text-2xl font-bold text-white mb-1 z-10">Buy Credits</h3>
+            <p class="text-gray-400 z-10">Top up using M-Pesa</p>
+        </a>
 
-        .topbar {
-            height: 85px;
-            padding: 0 5%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #29364a;
-        }
-
-        .brand {
-            font-size: 27px;
-            font-weight: bold;
-            letter-spacing: 3px;
-        }
-
-        .portal-name {
-            color: #8fa5c1;
-            font-size: 11px;
-            margin-top: 5px;
-            letter-spacing: 2px;
-        }
-
-        .system-time {
-            color: #dce8f8;
-            font-size: 18px;
-        }
-
-        .viewport {
-            width: 100%;
-            height: calc(100vh - 85px);
-            overflow: hidden;
-            touch-action: pan-y;
-        }
-
-        .screens {
-            display: flex;
-            width: 200%;
-            height: 100%;
-            transition: transform 0.4s ease;
-        }
-
-        .screen {
-            width: 50%;
-            height: 100%;
-            padding: 55px 8%;
-            flex-shrink: 0;
-            overflow-y: auto;
-        }
-
-        .welcome {
-            margin-bottom: 40px;
-        }
-
-        .welcome h1 {
-            font-size: 34px;
-            margin-bottom: 12px;
-        }
-
-        .welcome p {
-            color: #9eafc5;
-            font-size: 16px;
-        }
-
-        .main-apps {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 22px;
-            max-width: 850px;
-        }
-
-        .app {
-            background: #1d2b40;
-            border: 1px solid #2b405d;
-            border-radius: 18px;
-            min-height: 165px;
-            padding: 25px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            gap: 12px;
-            text-decoration: none;
-            color: white;
-            transition: 0.2s;
-        }
-
-        .app:hover {
-            background: #263b59;
-            transform: translateY(-3px);
-        }
-
-        .app-icon {
-            font-size: 34px;
-            color: #60a5fa;
-        }
-
-        .app h2 {
-            font-size: 19px;
-        }
-
-        .app p {
-            color: #aabbd0;
-            font-size: 13px;
-        }
-
-        .announcements {
-            margin-top: 25px;
-            max-width: 850px;
-            padding: 25px;
-            background: #1d2b40;
-            border: 1px solid #2b405d;
-            border-radius: 18px;
-        }
-
-        .announcements h2 {
-            font-size: 19px;
-            margin-bottom: 10px;
-        }
-
-        .announcements p {
-            color: #aabbd0;
-            font-size: 14px;
-        }
-
-        .secondary-apps {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 20px;
-            max-width: 650px;
-            margin-top: 35px;
-        }
-
-        .secondary-apps .app {
-            min-height: 140px;
-        }
-
-        .navigation {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 12px;
-            margin-top: 35px;
-            color: #9eafc5;
-            font-size: 13px;
-        }
-
-        .dot {
-            width: 9px;
-            height: 9px;
-            border-radius: 50%;
-            background: #52647d;
-        }
-
-        .dot.active {
-            background: #60a5fa;
-        }
-
-        @media (max-width: 600px) {
-            .screen {
-                padding: 35px 6%;
-            }
-
-            .welcome h1 {
-                font-size: 27px;
-            }
-
-            .app {
-                min-height: 140px;
-                padding: 18px;
-            }
-        }
-    </style>
-</head>
-
-<body>
-
-<header class="topbar">
-    <div>
-        <div class="brand">NEXORA</div>
-        <div class="portal-name">FSK PORTAL</div>
     </div>
 
-    <div class="system-time" id="clock">00:00</div>
-</header>
+    <!-- Bottom Info Cards -->
+    <div class="grid grid-cols-2 gap-5">
+        <!-- Balance Card -->
+        <div class="bg-gray-800/50 p-6 rounded-2xl border border-gray-700 flex flex-col items-center justify-center text-center">
+            <p class="text-gray-400 text-sm font-semibold uppercase tracking-wider mb-2">Current Balance</p>
+            <!-- Replace 0 with your actual Django variable, e.g., KES {{ student.balance }} -->
+            <p class="text-4xl font-bold text-white">KES 0.00</p>
+        </div>
 
-<div class="viewport" id="viewport">
-
-    <div class="screens" id="screens">
-
-        <!-- SCREEN 1: MAIN APPLICATIONS -->
-        <section class="screen">
-
-            <div class="welcome">
-                <h1>Welcome back, {{ student.first_name }}</h1>
-                <p>Your school connection starts here.</p>
-            </div>
-
-            <div class="main-apps">
-
-                <a href="{% url 'student-calling' %}" class="app">
-                    <div class="app-icon">☎</div>
-                    <h2>Calling</h2>
-                    <p>Contact your authorized parents.</p>
-                </a>
-
-                <a href="#" class="app">
-                    <div class="app-icon">✉</div>
-                    <h2>Messages</h2>
-                    <p>Your school communications.</p>
-                </a>
-
-            </div>
-
-            <div class="announcements">
-                <h2>📢 School Announcements</h2>
-                <p>Important school updates and notices will appear here.</p>
-            </div>
-
-            <div class="navigation">
-                <span class="dot active"></span>
-                <span class="dot"></span>
-                <span>Swipe left for more applications →</span>
-            </div>
-
-        </section>
-
-
-        <!-- SCREEN 2: OTHER APPLICATIONS -->
-        <section class="screen">
-
-            <div class="welcome">
-                <h1>School Applications</h1>
-                <p>Explore your other student services.</p>
-            </div>
-
-            <div class="secondary-apps">
-
-                <a href="#" class="app">
-                    <div class="app-icon">▦</div>
-                    <h2>Timetable</h2>
-                    <p>View your school schedule.</p>
-                </a>
-
-                <a href="#" class="app">
-                    <div class="app-icon">▤</div>
-                    <h2>Learning</h2>
-                    <p>Access learning materials.</p>
-                </a>
-
-                <a href="#" class="app">
-                    <div class="app-icon">◉</div>
-                    <h2>My Profile</h2>
-                    <p>View your student information.</p>
-                </a>
-
-                <a href="#" class="app">
-                    <div class="app-icon">⚙</div>
-                    <h2>Settings</h2>
-                    <p>Manage your preferences.</p>
-                </a>
-
-            </div>
-
-            <div class="navigation">
-                <span class="dot"></span>
-                <span class="dot active"></span>
-                <span>← Swipe right to return</span>
-            </div>
-
-        </section>
-
+        <!-- Quick Info Card -->
+        <div class="bg-gray-800/50 p-6 rounded-2xl border border-gray-700 flex flex-col items-center justify-center text-center">
+            <p class="text-gray-400 text-sm font-semibold uppercase tracking-wider mb-2">School Notices</p>
+            <p class="text-white text-lg font-semibold">No new notices today</p>
+        </div>
     </div>
+
 </div>
-
-<script>
-    // Live clock
-    function updateClock() {
-        const now = new Date();
-
-        document.getElementById("clock").textContent =
-            now.toLocaleTimeString("en-GB", {
-                hour: "2-digit",
-                minute: "2-digit"
-            });
-    }
-
-    updateClock();
-    setInterval(updateClock, 1000);
-
-
-    // Horizontal touchscreen navigation
-    const screens = document.getElementById("screens");
-    const viewport = document.getElementById("viewport");
-
-    let currentScreen = 0;
-    let startX = 0;
-
-    function changeScreen(screen) {
-        currentScreen = screen;
-
-        screens.style.transform =
-            `translateX(-${screen * 50}%)`;
-
-        document.querySelectorAll(".dot").forEach((dot, index) => {
-            dot.classList.toggle("active", index === screen);
-        });
-    }
-
-    viewport.addEventListener("touchstart", function(event) {
-        startX = event.touches[0].clientX;
-    });
-
-    viewport.addEventListener("touchend", function(event) {
-        const endX = event.changedTouches[0].clientX;
-        const difference = startX - endX;
-
-        if (difference > 60 && currentScreen === 0) {
-            changeScreen(1);
-        }
-
-        if (difference < -60 && currentScreen === 1) {
-            changeScreen(0);
-        }
-    });
-</script>
-
-</body>
-</html>
+{% endblock %}
