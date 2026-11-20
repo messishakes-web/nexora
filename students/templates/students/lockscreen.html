@@ -303,7 +303,7 @@
         const endY = event.changedTouches[0].clientY;
 
         if (startY - endY > 100) {
-            window.location.href = "/student-login/";
+        window.location.href = "/students/student-login/";
         }
     });
 
@@ -314,7 +314,7 @@
 
     lockscreen.addEventListener("mouseup", function(event) {
         if (startY - event.clientY > 100) {
-            window.location.href = "/student-login/";
+            window.location.href = "";
         }
     });
 
